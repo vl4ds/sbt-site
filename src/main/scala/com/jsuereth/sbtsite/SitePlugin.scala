@@ -32,6 +32,22 @@ object SitePlugin extends Plugin {
         for((f, d) <- m) yield (f, nestedDirectory + "/" + d)
       }
     
+    val Examples = config("site-examples") extend Compile
+    val ExampleTests = config("site-example-tests") extend Examples
+    
+    def addExampleSettings: Seq[Setting[_]] =
+      inConfig(Examples)(Defaults.compileSettings) ++ inConfig(ExampleTests)(Defaults.testSettings) ++ Seq(
+        siteMappings <<= (siteMappings, test in ExampleTests) map { (s, _) => s },
+        dependencyClasspath in Examples <++= (fullClasspath in Compile),
+        dependencyClasspath in ExampleTests <++= (fullClasspath in Examples),
+        dependencyClasspath in ExampleTests <++= (fullClasspath in Test)
+      )
+    
+    
+    // TODO - Figure out/document to do this in Build.scala if you want to use Ivy
+    //def addConfigs(p: Project): Project = p.configs(Examples, ExampleTests)
+      
+    
     /** Includes scaladoc APIS in site under a "latest/api" directory. */
     def includeScaladoc(alias: String = "latest/api"): Seq[Setting[_]] = 
       Seq(addMappingsToSiteDir(mappings in packageDoc in Compile, alias))
